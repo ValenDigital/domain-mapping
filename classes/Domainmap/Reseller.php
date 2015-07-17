@@ -521,4 +521,6 @@ abstract class Domainmap_Reseller {
 	public function get_currency_symbol(){
 		return DM_Currencies::get_symbol( Domainmap_Plugin::instance()->get_reseller()->get_currency() );
 	}
+
+
 }

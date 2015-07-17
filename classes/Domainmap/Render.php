@@ -63,6 +63,12 @@ abstract class Domainmap_Render {
 	 * @return mixed Returns mixed value of a property or NULL if a property doesn't exist.
 	 */
 	public function __get( $name ) {
+        $method_name =  "get_" . $name;
+
+        if( method_exists( $this, $method_name ) ) {
+            return $this->{$method_name}();
+        }
+
 		return array_key_exists( $name, $this->_data ) ? $this->_data[$name] : null;
 	}
 

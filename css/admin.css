@@ -877,3 +877,18 @@ table.domains td.column-actions a{
 #mapping-tab a del{
     color: #bbb;
 }
+ /*---------------- ResellerClub ---------------*/
+#domainmapping-resellerclub-header{
+    display: block;
+    height: 75px;
+    background: #fff;
+    width: 100%;
+}
+#domainmapping-resellerclub-logo{
+    background: #fff url("../images/rc-logo.png") center left no-repeat;
+    width: 350px;
+    height: 62px;
+    display: block;
+    padding-top: 10px;
+    margin-left: 20px;
+}
