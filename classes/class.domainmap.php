@@ -155,7 +155,7 @@ class domain_map {
 				add_filter( 'the_content', array( &$this, 'domain_mapping_post_content' ) );
 				add_filter( 'authenticate', array( &$this, 'authenticate' ), 999, 3 );
 
-				add_filter( 'wp_headers', array($this, 'rest_api_headers' ), 10, 1);
+				add_filter( 'wp_headers', array( $this, 'rest_api_headers' ), 10, 1);
 			}
 
 			//Network Admin Notice for WHMCS

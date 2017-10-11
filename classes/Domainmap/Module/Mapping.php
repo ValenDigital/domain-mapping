@@ -113,33 +113,31 @@ class Domainmap_Module_Mapping extends Domainmap_Module {
 		 * Actions.
 		 */
 		// Admin routing.
-		$this->_add_action('admin_init', 'route_domain');
+		$this->_add_action( 'admin_init', 'route_domain' );
 		// Login routing.
-		$this->_add_action('login_init', 'route_domain');
+		$this->_add_action( 'login_init', 'route_domain' );
 		// Frontend routing.
-		$this->_add_action('template_redirect', 'route_domain', 10);
+		$this->_add_action( 'template_redirect', 'route_domain', 10 );
 
 		$this->_add_action( 'customize_controls_init', 'set_customizer_flag' );
 
 		$this->_add_action( 'login_redirect', 'set_proper_login_redirect', 10, 2 );
-		$this->_add_action( 'site_url', 'set_login_form_action', 20, 4);
+		$this->_add_action( 'site_url', 'set_login_form_action', 20, 4 );
 
-		$this->_add_action("dm_toggle_mapping", "toggle_mapping", 10, 3);
-		$this->_add_action("delete_blog", "on_delete_blog", 10, 2);
+		$this->_add_action( "dm_toggle_mapping", "toggle_mapping", 10, 3 );
+		$this->_add_action( "delete_blog", "on_delete_blog", 10, 2 );
 
 		/*
 		 * Filters.
 		 */
-		$this->_add_filter("page_link",   'exclude_page_links', 10, 3);
-		$this->_add_filter("page_link",   'ssl_force_page_links', 11, 3);
+		$this->_add_filter( "page_link",   'exclude_page_links', 10, 3 );
+		$this->_add_filter( "page_link",   'ssl_force_page_links', 11, 3 );
 		// URLs swapping
 		$this->_add_filter( 'unswap_url', 'unswap_mapped_url' );
 		$this->_add_filter( 'home_url',   'home_url_scheme', 99, 4 );
 		$this->_add_filter( 'site_url',   'home_url_scheme', 99, 4 );
 		$this->_add_filter( 'admin_url', 'admin_url', 99, 3 );
-		if ( is_admin() ) {
-			$this->_add_filter( 'rest_url', 'rest_url_scheme', 99, 4 );
-		}
+		$this->_add_filter( 'rest_url', 'rest_url_scheme', 99, 4 );
 		if ( defined( 'DOMAIN_MAPPING' ) && filter_var( DOMAIN_MAPPING, FILTER_VALIDATE_BOOLEAN ) ) {
 			$this->_add_filter( 'login_url', 'set_proper_login_redirect', 2, 100 );
 			$this->_add_filter( 'logout_url', 'set_proper_login_redirect', 2, 100 );
@@ -679,6 +677,10 @@ class Domainmap_Module_Mapping extends Domainmap_Module {
 	 */
 	public function swap_mapped_url( $url, $path = false, $orig_scheme = false, $blog_id = false, $consider_front_redirect_type = true ) {
 
+		if ( $this->is_jetpack() ) {
+			return $this->set_jetpack_url( $url );
+		}
+
 		// do not swap URL if customizer is running
 		if ( $this->_suppress_swapping || self::utils()->is_mapped_domain( $url ) ) {
 			return $url;
@@ -709,10 +711,14 @@ class Domainmap_Module_Mapping extends Domainmap_Module {
 
 		// do not swap URL if customizer is running or front end redirection is disabled
 		if ( $this->_suppress_swapping ) {
-			return apply_filters("dm_swap_root_url", $url);
+			return apply_filters( "dm_swap_root_url", $url );
 		}
 
-		$domain = self::utils()->get_mapped_domain(false, !is_admin());
+		if ( $this->is_jetpack() ) {
+			return $this->set_jetpack_url( $url );
+		}
+
+		$domain = self::utils()->get_mapped_domain( false, !is_admin() );
 		if ( !$domain ){
 			return apply_filters("dm_swap_root_url", $url);
 		}
@@ -1340,7 +1346,12 @@ class Domainmap_Module_Mapping extends Domainmap_Module {
 	 * @param $blog_id
 	 * @return string
 	 */
-	function home_url_scheme($url, $path, $orig_scheme, $blog_id){
+	function home_url_scheme( $url, $path, $orig_scheme, $blog_id ){
+
+		if ( $this->is_jetpack() ) {
+			return $this->set_jetpack_url( $url );
+		}
+
 		$path = empty( $path ) ? "/" : $path;
 
 		if( class_exists("Upfront") && false !== strpos(  $path, "editmode=true" )  ){
@@ -1389,6 +1400,9 @@ class Domainmap_Module_Mapping extends Domainmap_Module {
 	 * Rest URL Scheme
 	 */
 	function rest_url_scheme( $url, $path, $blog_id, $orig_scheme ){
+		if ( $this->is_jetpack() ) {
+			return $this->set_jetpack_url( $url );
+		}
 		$current_rest_url 	= parse_url( $url );
 
 		//Get the host from each url to allow across the iframe
@@ -1399,13 +1413,43 @@ class Domainmap_Module_Mapping extends Domainmap_Module {
 			$url = self::utils()->unswap_url( $url );
 		}
 
-		if ( is_ssl() || $this->_plugin->get_option("map_force_admin_ssl")) {
+		if ( is_ssl() || $this->_plugin->get_option("map_force_admin_ssl") ) {
 			$url_info = parse_url( $url );
 			if( $url_info['scheme'] != 'https' ){
 				$url = str_replace( 'http://', 'https://', $url ); 
 			}
 		}
 		return $url;
+	}
+
+	/**
+	 * Check if the request is from Jetpack
+	 * 
+	 * @return bool
+	 */
+	function is_jetpack() {
+		if( preg_match( "/\/wp-admin\/admin.php\?page=jetpack/", $_SERVER['REQUEST_URI'] ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Set JetPack url. In case admin url is set to original, we need to show this to JetPack
+	 * 
+	 * @param string $url - the current url
+	 * 
+	 * @return string
+	 */
+	function set_jetpack_url( $url ) {
+		$admin_mapping = $this->_plugin->get_option( 'map_admindomain' );
+		
+		$scheme = ( self::$_force_admin_ssl || is_ssl() ) ? "https" : "http";
+		
+		if( $admin_mapping == "original" && self::utils()->is_mapped_domain( $url ) ){
+			return set_url_scheme( $this->unswap_mapped_url( $url ), $scheme );
+		}
+		return apply_filters( "dm_jetpack_url", $url );
 	}
 
 }
