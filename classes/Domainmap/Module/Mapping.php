@@ -138,6 +138,7 @@ class Domainmap_Module_Mapping extends Domainmap_Module {
 		$this->_add_filter( 'site_url',   'home_url_scheme', 99, 4 );
 		$this->_add_filter( 'admin_url', 'admin_url', 99, 3 );
 		$this->_add_filter( 'rest_url', 'rest_url_scheme', 99, 4 );
+		$this->_add_filter( 'jetpack_auth_type', 'jetpackcom_juocf', 100 );
 		if ( defined( 'DOMAIN_MAPPING' ) && filter_var( DOMAIN_MAPPING, FILTER_VALIDATE_BOOLEAN ) ) {
 			$this->_add_filter( 'login_url', 'set_proper_login_redirect', 2, 100 );
 			$this->_add_filter( 'logout_url', 'set_proper_login_redirect', 2, 100 );
@@ -1432,6 +1433,16 @@ class Domainmap_Module_Mapping extends Domainmap_Module {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Use the older connection flow for Jetpack
+	 * There is an issue with the new connection method as per https://github.com/Automattic/wp-calypso/issues/13509
+	 * 
+	 * @return string
+	 */
+	function jetpackcom_juocf() {
+		return 'jetpack';
 	}
 
 	/**
